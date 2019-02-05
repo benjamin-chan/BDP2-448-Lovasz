@@ -1,0 +1,176 @@
+---
+title: "BDP2-448 Lovasz"
+date: "`r Sys.Date()`"
+author: Benjamin Chan (chanb@ohsu.edu)
+output:
+  html_document:
+    toc: true
+    theme: simplex
+---
+
+```{r, echo = FALSE, results = "hide", message = FALSE, warning = FALSE}
+library("checkpoint")
+checkpoint("2019-01-01")
+library("magrittr")
+library("tidyverse")
+library("readxl")
+library("broom")
+library("knitr")
+library("svglite")
+library("lme4")
+library("broom.mixed")
+```
+
+```{r}
+getwd()
+f <- "../data/raw/Becky-Bedding Exposure Study Data for Stats.xlsx"
+```
+
+Import data file *`r f`*
+
+```{r}
+df <- f %>% read_excel()
+oldnames <- names(df)
+newnames <- c("id",
+              "sex",
+              "time",
+              "bedding",
+              "order",
+              "room",
+              "foodIntakeNormalized",
+              "orts",
+              "foodIntakeRaw",
+              "cumulativeFoodIntakeNormalized")
+names(df) <- newnames
+data.frame(oldnames, newnames) %>% kable()
+```
+
+Plot data.
+
+```{r}
+G <-
+  df %>%
+  ggplot() +
+  aes(x = time, y = foodIntakeNormalized, group = id, color = bedding) +
+  geom_line(alpha = 1/4) +
+  facet_wrap(~ bedding) +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous("Time\n(hours)", breaks = c(2, 4, 12, 24, 36, 48)) +
+  scale_y_continuous("Food intake, normalized\n(mg food/g body weight)") +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank())
+ggsave("../figures/lineplot.png", width = 7, height = 4, dpi = 300)
+ggsave("../figures/lineplot.svg", width = 7, height = 4, dpi = 300)
+```
+
+```{r}
+t <- 36
+```
+
+Reshape data to mouse-level analytic data set.
+Data point at t = `r t` is used to evaluate difference between A and B bedding types.
+
+Outcome variable is `diff`.
+
+* Positive values indicate the mouse ate more at t = `r t` with bedding type A
+* Negative values indicate the mouse ate more at t = `r t` with bedding type B
+
+```{r}
+dfA <-
+  df %>%
+  filter(time == t) %>%
+  filter(bedding == "A") %>%
+  select(id, foodIntakeNormalized) %>%
+  rename(A = foodIntakeNormalized)
+dfB <-
+  df %>%
+  filter(time == t) %>%
+  filter(bedding == "B") %>%
+  select(id, foodIntakeNormalized) %>%
+  rename(B = foodIntakeNormalized)
+dfDiff <-
+  merge(dfA, dfB, by = "id") %>%
+  mutate(diff = A - B)
+covariates <-
+  df %>%
+  filter(order == 1) %>%
+  select(id, sex, order, bedding, room) %>%
+  unique() %>%
+  mutate(isBeddingAFirst = order == 1 & bedding == "A")
+dfDiff <-
+  merge(dfDiff, covariates, by = "id") %>%
+  select(-c(order, bedding))
+```
+
+Exploratory comparisons.
+
+```{r}
+dfDiff %>%
+  group_by(sex) %>%
+  summarize(n = n(), mean = mean(diff), sd = sd(diff)) %>%
+  kable(digits = 1)
+dfDiff %>%
+  group_by(room) %>%
+  summarize(n = n(), mean = mean(diff), sd = sd(diff)) %>%
+  kable(digits = 1)
+dfDiff %>%
+  group_by(isBeddingAFirst) %>%
+  summarize(n = n(), mean = mean(diff), sd = sd(diff)) %>%
+  kable(digits = 1)
+```
+
+Models.
+
+```{r}
+lm(diff ~ 1, data = dfDiff) %>% tidy() %>% kable(digits = 3)
+```
+
+There appears to be a significant difference in the amount of food intake at t = `r t`.
+Food intake is higher with bedding type B.
+
+```{r}
+lm(diff ~ sex, data = dfDiff) %>% tidy() %>% kable(digits = 3)
+lm(diff ~ room, data = dfDiff) %>% tidy() %>% kable(digits = 3)
+```
+
+However, the difference is no longer apparent when adjusting for sex or room.
+
+```{r}
+lm(diff ~ isBeddingAFirst, data = dfDiff) %>% tidy() %>% kable(digits = 3)
+```
+
+The difference appears to depend on which bedding type the mouse experiences first.
+Mice that experience bedding type A first have higher food intakes at t = `r t` with bedding type A.
+Mice that experience bedding type B first have higher food intakes at t = `r t` with bedding type B.
+
+This suggests that a crossover design might not be the most optimal study design for this research question.
+
+
+An alternative analysis is to assume a model that ignores the cross-sectional study design.
+Instead, the model includes `order` as a fixed effect and an interaction between `bedding` and `order`.
+The model also includes a random intercept effect for mouse.
+
+```{r}
+dfRanEff <-
+  df %>%
+  filter(time == t) %>%
+  select(id, foodIntakeNormalized, order, bedding, sex, room) %>%
+  mutate(order = factor(order))
+dfRanEff %>%
+  group_by(bedding, order) %>%
+  summarize(n = n(), mean = mean(foodIntakeNormalized), sd = sd(foodIntakeNormalized)) %>%
+  kable(digits = 1)
+lmer(foodIntakeNormalized ~ bedding + order + bedding * order + (1 | id), 
+     data = dfRanEff) %>% 
+  tidy(conf.int = TRUE) %>% 
+  kable(digits = 3)
+```
+
+
+R session information.
+
+```{r, echo = FALSE}
+sprintf("Run time: %s", Sys.time())
+print(sessionInfo(), locale = FALSE)
+```
