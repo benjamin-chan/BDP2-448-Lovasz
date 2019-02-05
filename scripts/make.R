@@ -1,0 +1,5 @@
+library("knitr")
+library("rmarkdown")
+knit("scripts/BDP2-448.Rmd", output = "docs/BDP2-448.md")
+pandoc("docs/BDP2-448.md", format = "docx")
+system("pandoc --template=GitHub.html5 --self-contained docs/BDP2-448.md -o docs/BDP2-448.html")
