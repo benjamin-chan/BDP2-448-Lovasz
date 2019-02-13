@@ -171,15 +171,44 @@ dfRanEff <-
   select(id, foodIntakeNormalized, order, bedding, sex, room) %>%
   mutate(order = factor(order))
 dfRanEff %>%
-  group_by(bedding, order) %>%
+  group_by(order, bedding) %>%
   summarize(n = n(), mean = mean(foodIntakeNormalized), sd = sd(foodIntakeNormalized)) %>%
   kable(digits = 1)
-lmer(foodIntakeNormalized ~ bedding + order + bedding * order + (1 | id), 
-     data = dfRanEff) %>% 
+```
+
+A t = `r t`, normalized food intake for the mice under bedding type A is almost identical to the mice under bedding type B at the start of the experiment (`order` = 1).
+After crossover, there is a slightly lower normalized food intake among the mice under bedding type A.
+
+```{r}
+dfRanEff <-
+  dfRanEff %>%
+  mutate(orderRev = factor(order, levels = c(2, 1)))
+M <-
+  lmer(foodIntakeNormalized ~ bedding + orderRev + bedding * orderRev + (1 | id), 
+       data = dfRanEff)
+M %>% 
   tidy(conf.int = TRUE) %>% 
   kable(digits = 3)
 ```
 
+```{r, echo = FALSE}
+betaB <- M %>% tidy() %>% filter(term == "beddingB")
+```
+
+After crossover, mice under bedding type B had higher normalized food intake compared to bedding type A:
+`r betaB %>% pull(estimate) %>% sprintf("%.3g", .)` mg/g
+(p-value = `r betaB %>% pull(statistic) %>% pt(df = 1, lower.tail = FALSE) %>% sprintf("%.2g", .)`)
+
+```{r, echo = FALSE}
+M <-
+  lmer(foodIntakeNormalized ~ bedding + order + bedding * order + (1 | id), 
+       data = dfRanEff)
+betaB <- M %>% tidy() %>% filter(term == "beddingB")
+```
+
+Before crossover, there was virtual no difference between normalized food intake by bedding type:
+`r betaB %>% pull(estimate) %>% sprintf("%.3g", .)` mg/g
+(p-value = `r betaB %>% pull(statistic) %>% pt(df = 1, lower.tail = FALSE) %>% sprintf("%.2g", .)`)
 
 R session information.
 
