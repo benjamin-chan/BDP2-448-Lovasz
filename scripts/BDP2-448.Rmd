@@ -71,7 +71,8 @@ t <- 36
 Reshape data to mouse-level analytic data set.
 Data point at t = `r t` is used to evaluate difference between A and B bedding types.
 
-Outcome variable is `diff`.
+Outcome variable is `diff`,
+which is the difference between normalized food intake at t = `r t` under A-B bedding types.
 
 * Positive values indicate the mouse ate more at t = `r t` with bedding type A
 * Negative values indicate the mouse ate more at t = `r t` with bedding type B
@@ -123,29 +124,41 @@ dfDiff %>%
 Models.
 
 ```{r}
-lm(diff ~ 1, data = dfDiff) %>% tidy() %>% kable(digits = 3)
+M <- lm(diff ~ 1, data = dfDiff) 
+M %>% tidy() %>% kable(digits = 3)
 ```
 
-There appears to be a significant difference in the amount of food intake at t = `r t`.
-Food intake is higher with bedding type B.
+There appears to be **no** significant difference in the amount of food intake at t = `r t`.
+Normalized food intake is higher with bedding type B by
+`r M %>% tidy() %>% pull(estimate) %>% abs() %>% sprintf("%.3g", .)` mg/g
+(p-value = `r M %>% tidy() %>% pull(p.value) %>% sprintf("%.2g", .)`).
 
 ```{r}
 lm(diff ~ sex, data = dfDiff) %>% tidy() %>% kable(digits = 3)
 lm(diff ~ room, data = dfDiff) %>% tidy() %>% kable(digits = 3)
 ```
 
-However, the difference is no longer apparent when adjusting for sex or room.
+The difference is still not significant after adjusting for sex or room.
 
 ```{r}
-lm(diff ~ isBeddingAFirst, data = dfDiff) %>% tidy() %>% kable(digits = 3)
+M <- lm(diff ~ isBeddingAFirst, data = dfDiff)
+M %>% tidy() %>% kable(digits = 3)
 ```
 
-The difference appears to depend on which bedding type the mouse experiences first.
-Mice that experience bedding type A first have higher food intakes at t = `r t` with bedding type A.
-Mice that experience bedding type B first have higher food intakes at t = `r t` with bedding type B.
+```{r, echo = FALSE}
+betaA <- lm(diff ~ !isBeddingAFirst, data = dfDiff) %>% tidy() %>% filter(term == "(Intercept)")
+betaB <- lm(diff ~  isBeddingAFirst, data = dfDiff) %>% tidy() %>% filter(term == "(Intercept)")
+```
+
+However, the difference appears to depend on which bedding type the mouse experiences first.
+Mice that experience bedding type A first have higher food intakes at t = `r t` with bedding type A:
+`r betaA %>% pull(estimate) %>% abs() %>% sprintf("%.3g", .)` mg/g
+(p-value = `r betaA %>% pull(p.value) %>% sprintf("%.2g", .)`)
+Mice that experience bedding type B first have higher food intakes at t = `r t` with bedding type B:
+`r betaB %>% pull(estimate) %>% abs() %>% sprintf("%.3g", .)` mg/g
+(p-value = `r betaB %>% pull(p.value) %>% sprintf("%.2g", .)`)
 
 This suggests that a crossover design might not be the most optimal study design for this research question.
-
 
 An alternative analysis is to assume a model that ignores the cross-sectional study design.
 Instead, the model includes `order` as a fixed effect and an interaction between `bedding` and `order`.
