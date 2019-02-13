@@ -23,7 +23,7 @@ library("broom.mixed")
 
 ```{r}
 getwd()
-f <- "../data/raw/Becky-Bedding Exposure Study Data for Stats.xlsx"
+f <- "../data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx"
 ```
 
 Import data file *`r f`*
