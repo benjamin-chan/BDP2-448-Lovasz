@@ -61,6 +61,7 @@ G <-
   scale_y_continuous("Food intake, normalized\n(mg food/g body weight)") +
   theme_bw() +
   theme(legend.position = "none",
+        panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())
 ggsave("../figures/lineplot.png", width = 7, height = 4, dpi = 300)
 ggsave("../figures/lineplot.svg", width = 7, height = 4, dpi = 300)
