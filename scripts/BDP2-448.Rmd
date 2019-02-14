@@ -21,6 +21,8 @@ library("lme4")
 library("broom.mixed")
 ```
 
+# Import data
+
 ```{r}
 getwd()
 f <- "../data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx"
@@ -63,6 +65,13 @@ G <-
 ggsave("../figures/lineplot.png", width = 7, height = 4, dpi = 300)
 ggsave("../figures/lineplot.svg", width = 7, height = 4, dpi = 300)
 ```
+
+```{r lineplot, fig.height = 4}
+G
+```
+
+
+# Setup data
 
 ```{r}
 t <- 36
@@ -121,7 +130,8 @@ dfDiff %>%
   kable(digits = 1)
 ```
 
-Models.
+
+# Model A-B difference at t = `r t`
 
 ```{r}
 M <- lm(diff ~ 1, data = dfDiff) 
@@ -164,6 +174,13 @@ An alternative analysis is to assume a model that ignores the cross-sectional st
 Instead, the model includes `order` as a fixed effect and an interaction between `bedding` and `order`.
 The model also includes a random intercept effect for mouse.
 
+
+# Model normalized food intake at t = `r t`
+
+This model is a longitudinal model where each mouse contributes 2 data points,
+one for each bedding type (A, B).
+The model includes an `order` effect and an interaction between `bedding` and `order`.
+
 ```{r}
 dfRanEff <-
   df %>%
@@ -177,7 +194,7 @@ dfRanEff %>%
 ```
 
 A t = `r t`, normalized food intake for the mice under bedding type A is almost identical to the mice under bedding type B at the start of the experiment (`order` = 1).
-After crossover, there is a slightly lower normalized food intake among the mice under bedding type A.
+After crossover (`order` = 2) there is a slightly lower normalized food intake among the mice under bedding type A compared to bedding type B.
 
 ```{r}
 dfRanEff <-
@@ -187,7 +204,7 @@ M <-
   lmer(foodIntakeNormalized ~ bedding + orderRev + bedding * orderRev + (1 | id), 
        data = dfRanEff)
 M %>% 
-  tidy(conf.int = TRUE) %>% 
+  tidy(conf.int = TRUE, effects = "fixed") %>% 
   mutate(pvalue = pt(statistic, df = 1, lower.tail = FALSE)) %>% 
   kable(digits = 3)
 ```
@@ -207,11 +224,14 @@ M <-
 betaB <- M %>% tidy() %>% filter(term == "beddingB")
 ```
 
-Before crossover, there was virtual no difference between normalized food intake by bedding type:
+Before crossover, there was virtually no difference between normalized food intake by bedding type:
 `r betaB %>% pull(estimate) %>% sprintf("%.3g", .)` mg/g
 (p-value = `r betaB %>% pull(statistic) %>% pt(df = 1, lower.tail = FALSE) %>% sprintf("%.2g", .)`)
 
-R session information.
+
+# R session information
+
+For debugging purposes.
 
 ```{r, echo = FALSE}
 sprintf("Run time: %s", Sys.time())
