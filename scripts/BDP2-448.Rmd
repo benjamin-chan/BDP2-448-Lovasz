@@ -188,6 +188,7 @@ M <-
        data = dfRanEff)
 M %>% 
   tidy(conf.int = TRUE) %>% 
+  mutate(pvalue = pt(statistic, df = 1, lower.tail = FALSE)) %>% 
   kable(digits = 3)
 ```
 
