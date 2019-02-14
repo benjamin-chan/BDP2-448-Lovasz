@@ -1,0 +1,546 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Benjamin Chan (chanb@ohsu.edu)" />
+  <meta name="date" content="2019-02-13" />
+  <title>BDP2-448 Lovasz</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">BDP2-448 Lovasz</h1>
+<h2 class="author">Benjamin Chan (chanb@ohsu.edu)</h2>
+<h3 class="date">2019-02-13</h3>
+</div>
+<h1 id="import-data">Import data</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">getwd</span>()</code></pre></div>
+<pre><code>## [1] &quot;C:/Users/Ben/Google Drive/Work/BDP2-448-Lovasz/scripts&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;../data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx&quot;</span></code></pre></div>
+<p>Import data file <em>../data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx</em></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df &lt;-<span class="st"> </span>f %&gt;%<span class="st"> </span><span class="kw">read_excel</span>()</code></pre></div>
+<pre><code>## readxl works best with a newer version of the tibble package.
+## You currently have tibble v1.4.2.
+## Falling back to column name repair from tibble &lt;= v1.4.2.
+## Message displays once per session.</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">oldnames &lt;-<span class="st"> </span><span class="kw">names</span>(df)
+newnames &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;id&quot;</span>,
+              <span class="st">&quot;sex&quot;</span>,
+              <span class="st">&quot;time&quot;</span>,
+              <span class="st">&quot;bedding&quot;</span>,
+              <span class="st">&quot;order&quot;</span>,
+              <span class="st">&quot;room&quot;</span>,
+              <span class="st">&quot;foodIntakeNormalized&quot;</span>,
+              <span class="st">&quot;orts&quot;</span>,
+              <span class="st">&quot;foodIntakeRaw&quot;</span>,
+              <span class="st">&quot;cumulativeFoodIntakeNormalized&quot;</span>)
+<span class="kw">names</span>(df) &lt;-<span class="st"> </span>newnames
+<span class="kw">data.frame</span>(oldnames, newnames) %&gt;%<span class="st"> </span><span class="kw">kable</span>()</code></pre></div>
+<table>
+<colgroup>
+<col width="60%"></col>
+<col width="39%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">oldnames</th>
+<th align="left">newnames</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Mouse ID</td>
+<td align="left">id</td>
+</tr>
+<tr class="even">
+<td align="left">Sex</td>
+<td align="left">sex</td>
+</tr>
+<tr class="odd">
+<td align="left">Time (hr)</td>
+<td align="left">time</td>
+</tr>
+<tr class="even">
+<td align="left">Bedding</td>
+<td align="left">bedding</td>
+</tr>
+<tr class="odd">
+<td align="left">Order</td>
+<td align="left">order</td>
+</tr>
+<tr class="even">
+<td align="left">Housing Room</td>
+<td align="left">room</td>
+</tr>
+<tr class="odd">
+<td align="left">Normalized food intake (mg food/g BW)</td>
+<td align="left">foodIntakeNormalized</td>
+</tr>
+<tr class="even">
+<td align="left">Orts (g)</td>
+<td align="left">orts</td>
+</tr>
+<tr class="odd">
+<td align="left">Raw food intake (g)</td>
+<td align="left">foodIntakeRaw</td>
+</tr>
+<tr class="even">
+<td align="left">Normalized cumulative food intake (mg food/g BW)</td>
+<td align="left">cumulativeFoodIntakeNormalized</td>
+</tr>
+</tbody>
+</table>
+<p>Plot data.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">G &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">ggplot</span>() +
+<span class="st">  </span><span class="kw">aes</span>(<span class="dt">x =</span> time, <span class="dt">y =</span> foodIntakeNormalized, <span class="dt">group =</span> id, <span class="dt">color =</span> bedding) +
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="dt">alpha =</span> <span class="dv">1</span>/<span class="dv">4</span>) +
+<span class="st">  </span><span class="kw">facet_wrap</span>(~<span class="st"> </span>bedding) +
+<span class="st">  </span><span class="kw">scale_color_brewer</span>(<span class="dt">palette =</span> <span class="st">&quot;Set1&quot;</span>) +
+<span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="st">&quot;Time</span><span class="ch">\n</span><span class="st">(hours)&quot;</span>, <span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">12</span>, <span class="dv">24</span>, <span class="dv">36</span>, <span class="dv">48</span>)) +
+<span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="st">&quot;Food intake, normalized</span><span class="ch">\n</span><span class="st">(mg food/g body weight)&quot;</span>) +
+<span class="st">  </span><span class="kw">theme_bw</span>() +
+<span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position =</span> <span class="st">&quot;none&quot;</span>,
+        <span class="dt">panel.grid.major.x =</span> <span class="kw">element_blank</span>(),
+        <span class="dt">panel.grid.minor =</span> <span class="kw">element_blank</span>())
+<span class="kw">ggsave</span>(<span class="st">&quot;../figures/lineplot.png&quot;</span>, <span class="dt">width =</span> <span class="dv">7</span>, <span class="dt">height =</span> <span class="dv">4</span>, <span class="dt">dpi =</span> <span class="dv">300</span>)
+<span class="kw">ggsave</span>(<span class="st">&quot;../figures/lineplot.svg&quot;</span>, <span class="dt">width =</span> <span class="dv">7</span>, <span class="dt">height =</span> <span class="dv">4</span>, <span class="dt">dpi =</span> <span class="dv">300</span>)</code></pre></div>
+<pre><code>## Warning: package 'gdtools' was built under R version 3.5.2</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">G</code></pre></div>
+<div class="figure">
+<img src="data:image/png;base64,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" alt="plot of chunk lineplot" />
+<p class="caption">plot of chunk lineplot</p>
+</div>
+<h1 id="setup-data">Setup data</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">t &lt;-<span class="st"> </span><span class="dv">36</span></code></pre></div>
+<p>Reshape data to mouse-level analytic data set. Data point at t = 36 is used to evaluate difference between A and B bedding types.</p>
+<p>Outcome variable is <code>diff</code>, which is the difference between normalized food intake at t = 36 under A-B bedding types.</p>
+<ul>
+<li>Positive values indicate the mouse ate more at t = 36 with bedding type A</li>
+<li>Negative values indicate the mouse ate more at t = 36 with bedding type B</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dfA &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(time ==<span class="st"> </span>t) %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(bedding ==<span class="st"> &quot;A&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(id, foodIntakeNormalized) %&gt;%
+<span class="st">  </span><span class="kw">rename</span>(<span class="dt">A =</span> foodIntakeNormalized)</code></pre></div>
+<pre><code>## Warning: package 'bindrcpp' was built under R version 3.5.2</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dfB &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(time ==<span class="st"> </span>t) %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(bedding ==<span class="st"> &quot;B&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(id, foodIntakeNormalized) %&gt;%
+<span class="st">  </span><span class="kw">rename</span>(<span class="dt">B =</span> foodIntakeNormalized)
+dfDiff &lt;-
+<span class="st">  </span><span class="kw">merge</span>(dfA, dfB, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">diff =</span> A -<span class="st"> </span>B)
+covariates &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(order ==<span class="st"> </span><span class="dv">1</span>) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(id, sex, order, bedding, room) %&gt;%
+<span class="st">  </span><span class="kw">unique</span>() %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">isBeddingAFirst =</span> order ==<span class="st"> </span><span class="dv">1</span> &amp;<span class="st"> </span>bedding ==<span class="st"> &quot;A&quot;</span>)
+dfDiff &lt;-
+<span class="st">  </span><span class="kw">merge</span>(dfDiff, covariates, <span class="dt">by =</span> <span class="st">&quot;id&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(-<span class="kw">c</span>(order, bedding))</code></pre></div>
+<p>Exploratory comparisons.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dfDiff %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(sex) %&gt;%
+<span class="st">  </span><span class="kw">summarize</span>(<span class="dt">n =</span> <span class="kw">n</span>(), <span class="dt">mean =</span> <span class="kw">mean</span>(diff), <span class="dt">sd =</span> <span class="kw">sd</span>(diff)) %&gt;%
+<span class="st">  </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">sex</th>
+<th align="right">n</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">F</td>
+<td align="right">20</td>
+<td align="right">-9.0</td>
+<td align="right">41.3</td>
+</tr>
+<tr class="even">
+<td align="left">M</td>
+<td align="right">20</td>
+<td align="right">2.3</td>
+<td align="right">28.8</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dfDiff %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(room) %&gt;%
+<span class="st">  </span><span class="kw">summarize</span>(<span class="dt">n =</span> <span class="kw">n</span>(), <span class="dt">mean =</span> <span class="kw">mean</span>(diff), <span class="dt">sd =</span> <span class="kw">sd</span>(diff)) %&gt;%
+<span class="st">  </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">room</th>
+<th align="right">n</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0543</td>
+<td align="right">15</td>
+<td align="right">2.0</td>
+<td align="right">29.0</td>
+</tr>
+<tr class="even">
+<td align="left">0545C</td>
+<td align="right">25</td>
+<td align="right">-6.6</td>
+<td align="right">39.3</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dfDiff %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(isBeddingAFirst) %&gt;%
+<span class="st">  </span><span class="kw">summarize</span>(<span class="dt">n =</span> <span class="kw">n</span>(), <span class="dt">mean =</span> <span class="kw">mean</span>(diff), <span class="dt">sd =</span> <span class="kw">sd</span>(diff)) %&gt;%
+<span class="st">  </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">isBeddingAFirst</th>
+<th align="right">n</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">FALSE</td>
+<td align="right">20</td>
+<td align="right">-27.9</td>
+<td align="right">31.4</td>
+</tr>
+<tr class="even">
+<td align="left">TRUE</td>
+<td align="right">20</td>
+<td align="right">21.2</td>
+<td align="right">18.7</td>
+</tr>
+</tbody>
+</table>
+<h1 id="model-a-b-difference-at-t-36">Model A-B difference at t = 36</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">M &lt;-<span class="st"> </span><span class="kw">lm</span>(diff ~<span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> dfDiff) 
+M %&gt;%<span class="st"> </span><span class="kw">tidy</span>() %&gt;%<span class="st"> </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-3.376</td>
+<td align="right">5.635</td>
+<td align="right">-0.599</td>
+<td align="right">0.553</td>
+</tr>
+</tbody>
+</table>
+<p>There appears to be <strong>no</strong> significant difference in the amount of food intake at t = 36. Normalized food intake is higher with bedding type B by 3.38 mg/g (p-value = 0.55).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">lm</span>(diff ~<span class="st"> </span>sex, <span class="dt">data =</span> dfDiff) %&gt;%<span class="st"> </span><span class="kw">tidy</span>() %&gt;%<span class="st"> </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-9.044</td>
+<td align="right">7.967</td>
+<td align="right">-1.135</td>
+<td align="right">0.263</td>
+</tr>
+<tr class="even">
+<td align="left">sexM</td>
+<td align="right">11.336</td>
+<td align="right">11.267</td>
+<td align="right">1.006</td>
+<td align="right">0.321</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">lm</span>(diff ~<span class="st"> </span>room, <span class="dt">data =</span> dfDiff) %&gt;%<span class="st"> </span><span class="kw">tidy</span>() %&gt;%<span class="st"> </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">1.960</td>
+<td align="right">9.257</td>
+<td align="right">0.212</td>
+<td align="right">0.833</td>
+</tr>
+<tr class="even">
+<td align="left">room0545C</td>
+<td align="right">-8.537</td>
+<td align="right">11.709</td>
+<td align="right">-0.729</td>
+<td align="right">0.470</td>
+</tr>
+</tbody>
+</table>
+<p>The difference is still not significant after adjusting for sex or room.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">M &lt;-<span class="st"> </span><span class="kw">lm</span>(diff ~<span class="st"> </span>isBeddingAFirst, <span class="dt">data =</span> dfDiff)
+M %&gt;%<span class="st"> </span><span class="kw">tidy</span>() %&gt;%<span class="st"> </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">-27.929</td>
+<td align="right">5.783</td>
+<td align="right">-4.830</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">isBeddingAFirstTRUE</td>
+<td align="right">49.106</td>
+<td align="right">8.178</td>
+<td align="right">6.005</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>However, the difference appears to depend on which bedding type the mouse experiences first. Mice that experience bedding type A first have higher food intakes at t = 36 with bedding type A: 21.2 mg/g (p-value = 0.00076) Mice that experience bedding type B first have higher food intakes at t = 36 with bedding type B: 27.9 mg/g (p-value = 2.3e-05)</p>
+<p>This suggests that a crossover design might not be the most optimal study design for this research question.</p>
+<p>An alternative analysis is to assume a model that ignores the cross-sectional study design. Instead, the model includes <code>order</code> as a fixed effect and an interaction between <code>bedding</code> and <code>order</code>. The model also includes a random intercept effect for mouse.</p>
+<h1 id="model-normalized-food-intake-at-t-36">Model normalized food intake at t = 36</h1>
+<p>This model is a longitudinal model where each mouse contributes 2 data points, one for each bedding type (A, B). The model includes an <code>order</code> effect and an interaction between <code>bedding</code> and <code>order</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dfRanEff &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(time ==<span class="st"> </span>t) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(id, foodIntakeNormalized, order, bedding, sex, room) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">order =</span> <span class="kw">factor</span>(order))
+dfRanEff %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(order, bedding) %&gt;%
+<span class="st">  </span><span class="kw">summarize</span>(<span class="dt">n =</span> <span class="kw">n</span>(), <span class="dt">mean =</span> <span class="kw">mean</span>(foodIntakeNormalized), <span class="dt">sd =</span> <span class="kw">sd</span>(foodIntakeNormalized)) %&gt;%
+<span class="st">  </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">1</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">order</th>
+<th align="left">bedding</th>
+<th align="right">n</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">A</td>
+<td align="right">20</td>
+<td align="right">143.9</td>
+<td align="right">18.3</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="left">B</td>
+<td align="right">20</td>
+<td align="right">143.2</td>
+<td align="right">23.6</td>
+</tr>
+<tr class="odd">
+<td align="left">2</td>
+<td align="left">A</td>
+<td align="right">20</td>
+<td align="right">115.3</td>
+<td align="right">21.8</td>
+</tr>
+<tr class="even">
+<td align="left">2</td>
+<td align="left">B</td>
+<td align="right">20</td>
+<td align="right">122.7</td>
+<td align="right">18.8</td>
+</tr>
+</tbody>
+</table>
+<p>A t = 36, normalized food intake for the mice under bedding type A is almost identical to the mice under bedding type B at the start of the experiment (<code>order</code> = 1). After crossover (<code>order</code> = 2) there is a slightly lower normalized food intake among the mice under bedding type A compared to bedding type B.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dfRanEff &lt;-
+<span class="st">  </span>dfRanEff %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">orderRev =</span> <span class="kw">factor</span>(order, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">1</span>)))
+M &lt;-
+<span class="st">  </span><span class="kw">lmer</span>(foodIntakeNormalized ~<span class="st"> </span>bedding +<span class="st"> </span>orderRev +<span class="st"> </span>bedding *<span class="st"> </span>orderRev +<span class="st"> </span>(<span class="dv">1</span> |<span class="st"> </span>id), 
+       <span class="dt">data =</span> dfRanEff)
+M %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">tidy</span>(<span class="dt">conf.int =</span> <span class="ot">TRUE</span>, <span class="dt">effects =</span> <span class="st">&quot;fixed&quot;</span>) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">pvalue =</span> <span class="kw">pt</span>(statistic, <span class="dt">df =</span> <span class="dv">1</span>, <span class="dt">lower.tail =</span> <span class="ot">FALSE</span>)) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">effect</th>
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">statistic</th>
+<th align="right">conf.low</th>
+<th align="right">conf.high</th>
+<th align="right">pvalue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">(Intercept)</td>
+<td align="right">115.292</td>
+<td align="right">4.638</td>
+<td align="right">24.857</td>
+<td align="right">106.201</td>
+<td align="right">124.383</td>
+<td align="right">0.013</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">beddingB</td>
+<td align="right">7.411</td>
+<td align="right">6.559</td>
+<td align="right">1.130</td>
+<td align="right">-5.445</td>
+<td align="right">20.268</td>
+<td align="right">0.231</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">orderRev1</td>
+<td align="right">28.588</td>
+<td align="right">6.559</td>
+<td align="right">4.358</td>
+<td align="right">15.732</td>
+<td align="right">41.445</td>
+<td align="right">0.072</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">beddingB:orderRev1</td>
+<td align="right">-8.071</td>
+<td align="right">10.258</td>
+<td align="right">-0.787</td>
+<td align="right">-28.176</td>
+<td align="right">12.035</td>
+<td align="right">0.712</td>
+</tr>
+</tbody>
+</table>
+<p>After crossover, mice under bedding type B had higher normalized food intake compared to bedding type A: 7.41 mg/g (p-value = 0.23)</p>
+<p>Before crossover, there was virtually no difference between normalized food intake by bedding type: -0.659 mg/g (p-value = 0.53)</p>
+<h1 id="r-session-information">R session information</h1>
+<p>For debugging purposes.</p>
+<pre><code>## [1] &quot;Run time: 2019-02-13 22:34:46&quot;</code></pre>
+<pre><code>## R version 3.5.1 (2018-07-02)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 17134)
+## 
+## Matrix products: default
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] bindrcpp_0.2.2    gdtools_0.1.7     broom.mixed_0.2.3
+##  [4] lme4_1.1-19       Matrix_1.2-14     svglite_1.2.1    
+##  [7] broom_0.5.1       readxl_1.2.0      forcats_0.3.0    
+## [10] stringr_1.3.1     dplyr_0.7.8       purrr_0.2.5      
+## [13] readr_1.3.1       tidyr_0.8.2       tibble_1.4.2     
+## [16] ggplot2_3.1.0     tidyverse_1.2.1   magrittr_1.5     
+## [19] checkpoint_0.4.5  rmarkdown_1.11    knitr_1.21       
+## 
+## loaded via a namespace (and not attached):
+##  [1] TMB_1.7.15         tidyselect_0.2.5   xfun_0.4          
+##  [4] reshape2_1.4.3     glmmTMB_0.2.2.0    splines_3.5.1     
+##  [7] haven_2.0.0        lattice_0.20-35    colorspace_1.3-2  
+## [10] generics_0.0.2     htmltools_0.3.6    rlang_0.3.0.1     
+## [13] nloptr_1.2.1       pillar_1.3.1       glue_1.3.0        
+## [16] withr_2.1.2        RColorBrewer_1.1-2 modelr_0.1.2      
+## [19] bindr_0.1.1        plyr_1.8.4         munsell_0.5.0     
+## [22] gtable_0.2.0       cellranger_1.1.0   rvest_0.3.2       
+## [25] coda_0.19-2        evaluate_0.12      labeling_0.3      
+## [28] highr_0.7          Rcpp_0.12.19       scales_1.0.0      
+## [31] backports_1.1.3    jsonlite_1.6       hms_0.4.2         
+## [34] digest_0.6.18      stringi_1.2.4      grid_3.5.1        
+## [37] cli_1.0.1          tools_3.5.1        lazyeval_0.2.1    
+## [40] crayon_1.3.4       pkgconfig_2.0.2    MASS_7.3-50       
+## [43] xml2_1.2.0         lubridate_1.7.4    minqa_1.2.4       
+## [46] assertthat_0.2.0   httr_1.4.0         rstudioapi_0.8    
+## [49] R6_2.3.0           nlme_3.1-137       compiler_3.5.1</code></pre>
+</body>
+</html>
