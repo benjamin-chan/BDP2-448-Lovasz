@@ -230,6 +230,57 @@ Before crossover, there was virtually no difference between normalized food inta
 (p-value = `r betaB %>% pull(statistic) %>% pt(df = 1, lower.tail = FALSE) %>% sprintf("%.2g", .)`)
 
 
+# New analysis
+
+On Thu, May 2, 2019 at 12:44 PM Becky Lovasz <lovasz@ohsu.edu> wrote:
+
+> Hi Ben,
+>  
+> My project was put on the back burner for a while, and I'm picking it back up
+> again. I discussed the results below with my research advisor. Can you please
+> compare normalized food intake for Bedding A vs. Bedding B, regardless of
+> bedding exposure order, at each time point separately? We'd like to see males
+> only, females only, and all mice combined. Thanks for your help!
+
+```{r}
+M <-
+  df %>%
+  mutate(time = factor(time)) %>%
+  lmer(foodIntakeNormalized ~
+         bedding +
+         time +
+         bedding * time +
+         (1 | id), 
+       data = .)
+M %>% 
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(pvalue = pnorm(abs(statistic), lower.tail = FALSE) * 2) %>%
+  kable(digits = 3)
+```
+
+```{r}
+M <-
+  df %>%
+  mutate(time = factor(time)) %>%
+  lmer(foodIntakeNormalized ~
+         bedding +
+         time +
+         sex +
+         bedding * time +
+         bedding * sex +
+         sex * time +
+         bedding * time * sex +
+         (1 | id), 
+       data = .)
+M %>% 
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  mutate(pvalue = pnorm(abs(statistic), lower.tail = FALSE) * 2) %>%
+  kable(digits = 3)
+```
+
+
 # R session information
 
 For debugging purposes.
