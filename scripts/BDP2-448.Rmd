@@ -18,6 +18,7 @@ library("broom")
 library("knitr")
 library("svglite")
 library("lme4")
+library("nlme")
 library("broom.mixed")
 ```
 
@@ -242,6 +243,8 @@ On Thu, May 2, 2019 at 12:44 PM Becky Lovasz <lovasz@ohsu.edu> wrote:
 > bedding exposure order, at each time point separately? We'd like to see males
 > only, females only, and all mice combined. Thanks for your help!
 
+## All mice combined
+
 ```{r}
 M <-
   df %>%
@@ -255,9 +258,36 @@ M <-
 M %>% 
   tidy() %>%
   filter(effect == "fixed") %>%
+  filter(grepl("bedding", term)) %>%
   mutate(pvalue = pnorm(abs(statistic), lower.tail = FALSE) * 2) %>%
   kable(digits = 3)
 ```
+
+```{r}
+fixed <- formula(foodIntakeNormalized ~
+                   bedding +
+                   time +
+                   bedding * time)
+random <- formula(~ 1 | id)
+cs <-
+  # corAR1(form = random, fixed = FALSE) %>%
+  corSymm(form = random, fixed = FALSE) %>%
+  Initialize(data = df)
+ctrl <- lmeControl(opt = "optim",
+                   maxIter = 500, msMaxIter = 500,
+                   tolerance = 1e-6, niterEM = 25, msMaxEval = 200, msTol = 1e-7)
+M <-
+  df %>%
+  mutate(time = factor(time)) %>%
+  lme(fixed, data = ., random = random, correlation = cs, control = ctrl)
+M %>% 
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  filter(grepl("bedding", term)) %>%
+  kable(digits = 3)
+```
+
+## By sex
 
 ```{r}
 M <-
