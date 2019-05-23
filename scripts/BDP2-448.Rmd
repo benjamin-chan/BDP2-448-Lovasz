@@ -346,43 +346,43 @@ test2 <- testBeddingEffect
 
 # Interpretation
 
-```{r, echo = FALSE}
-pullResult <- function (nlmeObj, x) {
-  beta <- nlmeObj %>% tidy() %>% filter(term == x)
-  dir <- ifelse(beta %>% pull(estimate) > 0, "higher", "lower")
-  es <- beta %>% pull(estimate) %>% abs() %>% sprintf("%.3g", .)
-  p <- beta %>% pull(p.value) %>% sprintf("%.2g", .)
-  list(direction = dir, effsize = es, pvalue = p)
-}
-```
+Using a model that does not distinguish male and female mice, there is a
+slight difference in food intake by bedding type at 24 and 48 hours.
+At 24 hours, food intake is
+`r test1 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
+`r test1 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(direction)`
+with bedding type B compared to A
+(p-value: `r test1 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
+At 48 hours, food intake is
+`r test1 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
+`r test1 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(direction)`
+with bedding type B compared to A
+(p-value: `r test1 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
 
-* Using a model that does not distinguish male and female mice, there is a
-slight difference in food intake by bedding type only at t = 24 hours (and at no
-other time points).
-Food intake is
-`r pullResult(M1, "beddingB:time24")[["effsize"]]` mg/g
-`r pullResult(M1, "beddingB:time24")[["direction"]]`
-with bedding type B at t = 24 hours
-(p-value: `r pullResult(M1, "beddingB:time24")[["pvalue"]]`).
-* Among female mice, there is a difference in food intake by bedding type at t
-= 24 and 48.
-Food intake is
-`r pullResult(M2, "beddingB:time24")[["effsize"]]` mg/g
-`r pullResult(M2, "beddingB:time24")[["direction"]]`
-with bedding type B at t = 24 hours
-(p-value: `r pullResult(M2, "beddingB:time24")[["pvalue"]]`).
-Food intake is
-`r pullResult(M2, "beddingB:time48")[["effsize"]]` mg/g
-`r pullResult(M2, "beddingB:time48")[["direction"]]`
-with bedding type B at t = 48 hours
-(p-value: `r pullResult(M2, "beddingB:time48")[["pvalue"]]`).
-* Among male mice, there is a difference in food intake by bedding type at t
-= 48.
-Food intake is
-`r pullResult(M2, "beddingB:time48:sexM")[["effsize"]]` mg/g
-`r pullResult(M2, "beddingB:time48:sexM")[["direction"]]`
-with bedding type B at t = 48 hours
-(p-value: `r pullResult(M2, "beddingB:time48:sexM")[["pvalue"]]`).
+Among female mice, there is a difference in food intake by bedding type at 24
+and 48 hours.
+At 24 hours, food intake is
+`r test2 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
+`r test2 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(direction)`
+with bedding type B compared to A
+(p-value: `r test2 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
+At 48 hours, food intake is
+`r test2 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
+`r test2 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(direction)`
+with bedding type B compared to A
+(p-value: `r test2 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
+
+Among male mice, there is a difference in food intake by bedding type at 2 and 48 hours.
+At 2 hours, food intake is
+`r test2 %>% filter(contrast == "beddingB + beddingB:sexM = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
+`r test2 %>% filter(contrast == "beddingB + beddingB:sexM = 0") %>% pull(direction)`
+with bedding type B compared to A
+(p-value: `r test2 %>% filter(contrast == "beddingB + beddingB:sexM = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
+At 48 hours, food intake is
+`r test2 %>% filter(contrast == "beddingB + beddingB:sexM + beddingB:time48:sexM = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
+`r test2 %>% filter(contrast == "beddingB + beddingB:sexM + beddingB:time48:sexM = 0") %>% pull(direction)`
+with bedding type B compared to A
+(p-value: `r test2 %>% filter(contrast == "beddingB + beddingB:sexM + beddingB:time48:sexM = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
 
 
 # R session information
