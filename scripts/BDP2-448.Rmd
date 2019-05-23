@@ -262,7 +262,6 @@ M <-
 M %>% 
   tidy() %>%
   filter(effect == "fixed") %>%
-  filter(grepl("bedding", term)) %>%
   mutate(pvalue = pnorm(abs(statistic), lower.tail = FALSE) * 2) %>%
   kable(digits = 3)
 ```
@@ -290,7 +289,6 @@ M <-
 M %>% 
   tidy() %>%
   filter(effect == "fixed") %>%
-  filter(grepl("bedding", term)) %>%
   kable(digits = 3)
 ```
 
@@ -316,7 +314,6 @@ M <-
 M %>% 
   tidy() %>%
   filter(effect == "fixed") %>%
-  filter(grepl("bedding", term)) %>%
   mutate(pvalue = pnorm(abs(statistic), lower.tail = FALSE) * 2) %>%
   kable(digits = 3)
 ```
@@ -348,7 +345,6 @@ M <-
 M %>% 
   tidy() %>%
   filter(effect == "fixed") %>%
-  filter(grepl("bedding", term)) %>%
   kable(digits = 3)
 ```
 
