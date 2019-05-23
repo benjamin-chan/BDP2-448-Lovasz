@@ -54,21 +54,22 @@ Plot data.
 G <-
   df %>%
   ggplot() +
-  aes(x = time, y = foodIntakeNormalized, group = id, color = bedding) +
-  geom_line(alpha = 1/4) +
-  facet_wrap(~ bedding) +
+  aes(x = time, y = foodIntakeNormalized, color = bedding) +
+  geom_line(aes(group = id), alpha = 1/4) +
+  geom_boxplot(aes(group = time)) +
+  facet_grid(sex ~ bedding) +
   scale_color_brewer(palette = "Set1") +
   scale_x_continuous("Time\n(hours)", breaks = c(2, 4, 12, 24, 36, 48)) +
   scale_y_continuous("Food intake, normalized\n(mg food/g body weight)") +
   theme_bw() +
   theme(legend.position = "none",
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())
-ggsave("../figures/lineplot.png", width = 7, height = 4, dpi = 300)
-ggsave("../figures/lineplot.svg", width = 7, height = 4, dpi = 300)
+        panel.grid.minor.x = element_blank())
+ggsave("../figures/lineplot.png", dpi = 300)
+ggsave("../figures/lineplot.svg", dpi = 300)
 ```
 
-```{r lineplot, fig.height = 4}
+```{r lineplot}
 G
 ```
 
@@ -245,6 +246,9 @@ On Thu, May 2, 2019 at 12:44 PM Becky Lovasz <lovasz@ohsu.edu> wrote:
 
 ## All mice combined
 
+Use `lme4::lmer()`.
+`lmer()` assumes compound symmetric correlation structure.
+
 ```{r}
 M <-
   df %>%
@@ -262,6 +266,9 @@ M %>%
   mutate(pvalue = pnorm(abs(statistic), lower.tail = FALSE) * 2) %>%
   kable(digits = 3)
 ```
+
+Use `nlme::lme()`.
+Specify a general correlation structure with `corSymm()`.
 
 ```{r}
 fixed <- formula(foodIntakeNormalized ~
@@ -289,6 +296,9 @@ M %>%
 
 ## By sex
 
+Use `lme4::lmer()`.
+`lmer()` assumes compound symmetric correlation structure.
+
 ```{r}
 M <-
   df %>%
@@ -306,7 +316,39 @@ M <-
 M %>% 
   tidy() %>%
   filter(effect == "fixed") %>%
+  filter(grepl("bedding", term)) %>%
   mutate(pvalue = pnorm(abs(statistic), lower.tail = FALSE) * 2) %>%
+  kable(digits = 3)
+```
+
+Use `nlme::lme()`.
+Specify a general correlation structure with `corSymm()`.
+
+```{r}
+fixed <- formula(foodIntakeNormalized ~
+                   bedding +
+                   time +
+                   sex +
+                   bedding * time +
+                   bedding * sex +
+                   sex * time +
+                   bedding * time * sex)
+random <- formula(~ 1 | id)
+cs <-
+  # corAR1(form = random, fixed = FALSE) %>%
+  corSymm(form = random, fixed = FALSE) %>%
+  Initialize(data = df)
+ctrl <- lmeControl(opt = "optim",
+                   maxIter = 500, msMaxIter = 500,
+                   tolerance = 1e-6, niterEM = 25, msMaxEval = 200, msTol = 1e-7)
+M <-
+  df %>%
+  mutate(time = factor(time)) %>%
+  lme(fixed, data = ., random = random, correlation = cs, control = ctrl)
+M %>% 
+  tidy() %>%
+  filter(effect == "fixed") %>%
+  filter(grepl("bedding", term)) %>%
   kable(digits = 3)
 ```
 
