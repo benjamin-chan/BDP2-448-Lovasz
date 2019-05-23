@@ -20,14 +20,14 @@ library("svglite")
 library("lme4")
 library("nlme")
 library("broom.mixed")
-library(multcomp)
+library("multcomp")
 ```
 
 # Import data
 
 ```{r}
 getwd()
-f <- "../data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx"
+f <- "data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx"
 ```
 
 Import data file *`r f`*
@@ -66,8 +66,8 @@ G <-
   theme(legend.position = "none",
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
-ggsave("../figures/lineplot.png", dpi = 300)
-ggsave("../figures/lineplot.svg", dpi = 300)
+ggsave("figures/lineplot.png", dpi = 300)
+ggsave("figures/lineplot.svg", dpi = 300)
 ```
 
 ```{r lineplot}
