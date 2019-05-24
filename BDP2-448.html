@@ -1,0 +1,869 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Benjamin Chan (chanb@ohsu.edu)" />
+  <meta name="date" content="2019-05-23" />
+  <title>BDP2-448 Lovasz</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">BDP2-448 Lovasz</h1>
+<h2 class="author">Benjamin Chan (chanb@ohsu.edu)</h2>
+<h3 class="date">2019-05-23</h3>
+</div>
+<h1 id="import-data">Import data</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">getwd</span>()</code></pre></div>
+<pre><code>## [1] &quot;C:/Users/Ben/Google Drive/Work/BDP2-448-Lovasz&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx&quot;</span></code></pre></div>
+<p>Import data file <em>data/raw/Becky-Bedding Exposure Study Data for Stats.2.xlsx</em></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df &lt;-<span class="st"> </span>f %&gt;%<span class="st"> </span><span class="kw">read_excel</span>()</code></pre></div>
+<pre><code>## readxl works best with a newer version of the tibble package.
+## You currently have tibble v1.4.2.
+## Falling back to column name repair from tibble &lt;= v1.4.2.
+## Message displays once per session.</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">oldnames &lt;-<span class="st"> </span><span class="kw">names</span>(df)
+newnames &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;id&quot;</span>,
+              <span class="st">&quot;sex&quot;</span>,
+              <span class="st">&quot;time&quot;</span>,
+              <span class="st">&quot;bedding&quot;</span>,
+              <span class="st">&quot;order&quot;</span>,
+              <span class="st">&quot;room&quot;</span>,
+              <span class="st">&quot;foodIntakeNormalized&quot;</span>,
+              <span class="st">&quot;orts&quot;</span>,
+              <span class="st">&quot;foodIntakeRaw&quot;</span>,
+              <span class="st">&quot;cumulativeFoodIntakeNormalized&quot;</span>)
+<span class="kw">names</span>(df) &lt;-<span class="st"> </span>newnames
+<span class="kw">data.frame</span>(oldnames, newnames) %&gt;%<span class="st"> </span><span class="kw">kable</span>()</code></pre></div>
+<table>
+<colgroup>
+<col width="60%"></col>
+<col width="39%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">oldnames</th>
+<th align="left">newnames</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Mouse ID</td>
+<td align="left">id</td>
+</tr>
+<tr class="even">
+<td align="left">Sex</td>
+<td align="left">sex</td>
+</tr>
+<tr class="odd">
+<td align="left">Time (hr)</td>
+<td align="left">time</td>
+</tr>
+<tr class="even">
+<td align="left">Bedding</td>
+<td align="left">bedding</td>
+</tr>
+<tr class="odd">
+<td align="left">Order</td>
+<td align="left">order</td>
+</tr>
+<tr class="even">
+<td align="left">Housing Room</td>
+<td align="left">room</td>
+</tr>
+<tr class="odd">
+<td align="left">Normalized food intake (mg food/g BW)</td>
+<td align="left">foodIntakeNormalized</td>
+</tr>
+<tr class="even">
+<td align="left">Orts (g)</td>
+<td align="left">orts</td>
+</tr>
+<tr class="odd">
+<td align="left">Raw food intake (g)</td>
+<td align="left">foodIntakeRaw</td>
+</tr>
+<tr class="even">
+<td align="left">Normalized cumulative food intake (mg food/g BW)</td>
+<td align="left">cumulativeFoodIntakeNormalized</td>
+</tr>
+</tbody>
+</table>
+<p>Plot data.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">G &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">ggplot</span>() +
+<span class="st">  </span><span class="kw">aes</span>(<span class="dt">x =</span> time, <span class="dt">y =</span> foodIntakeNormalized, <span class="dt">color =</span> bedding) +
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">group =</span> id), <span class="dt">alpha =</span> <span class="dv">1</span>/<span class="dv">4</span>) +
+<span class="st">  </span><span class="kw">geom_boxplot</span>(<span class="kw">aes</span>(<span class="dt">group =</span> time)) +
+<span class="st">  </span><span class="kw">facet_grid</span>(sex ~<span class="st"> </span>bedding) +
+<span class="st">  </span><span class="kw">scale_color_brewer</span>(<span class="dt">palette =</span> <span class="st">&quot;Set1&quot;</span>) +
+<span class="st">  </span><span class="kw">scale_x_continuous</span>(<span class="st">&quot;Time</span><span class="ch">\n</span><span class="st">(hours)&quot;</span>, <span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">12</span>, <span class="dv">24</span>, <span class="dv">36</span>, <span class="dv">48</span>)) +
+<span class="st">  </span><span class="kw">scale_y_continuous</span>(<span class="st">&quot;Food intake, normalized</span><span class="ch">\n</span><span class="st">(mg food/g body weight)&quot;</span>) +
+<span class="st">  </span><span class="kw">theme_bw</span>() +
+<span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position =</span> <span class="st">&quot;none&quot;</span>,
+        <span class="dt">panel.grid.major.x =</span> <span class="kw">element_blank</span>(),
+        <span class="dt">panel.grid.minor.x =</span> <span class="kw">element_blank</span>())
+<span class="kw">ggsave</span>(<span class="st">&quot;figures/lineplot.png&quot;</span>, <span class="dt">dpi =</span> <span class="dv">300</span>)</code></pre></div>
+<pre><code>## Saving 7 x 7 in image</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggsave</span>(<span class="st">&quot;figures/lineplot.svg&quot;</span>, <span class="dt">dpi =</span> <span class="dv">300</span>)</code></pre></div>
+<pre><code>## Saving 7 x 7 in image</code></pre>
+<pre><code>## Warning: package 'gdtools' was built under R version 3.5.2</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">G</code></pre></div>
+<div class="figure">
+<img src="data:image/png;base64,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" alt="plot of chunk lineplot" />
+<p class="caption">plot of chunk lineplot</p>
+</div>
+<h1 id="new-analysis">New analysis</h1>
+<p>Prior analysis is archived in commit <code>f3ce92</code>.</p>
+<p>On Thu, May 2, 2019 at 12:44 PM Becky Lovasz <script type="text/javascript">
+<!--
+h='&#x6f;&#104;&#x73;&#x75;&#46;&#x65;&#100;&#x75;';a='&#64;';n='&#108;&#x6f;&#118;&#x61;&#x73;&#122;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>lovasz at ohsu dot edu</noscript> wrote:</p>
+<blockquote>
+<p>Hi Ben,</p>
+<p>My project was put on the back burner for a while, and I'm picking it back up again. I discussed the results below with my research advisor. Can you please compare normalized food intake for Bedding A vs. Bedding B, regardless of bedding exposure order, at each time point separately? We'd like to see males only, females only, and all mice combined. Thanks for your help!</p>
+</blockquote>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">random &lt;-<span class="st"> </span><span class="kw">formula</span>(~<span class="st"> </span><span class="dv">1</span> |<span class="st"> </span>id)
+cs &lt;-
+<span class="st">  </span><span class="kw">corSymm</span>(<span class="dt">form =</span> random, <span class="dt">fixed =</span> <span class="ot">FALSE</span>) %&gt;%
+<span class="st">  </span><span class="kw">Initialize</span>(<span class="dt">data =</span> df)
+ctrl &lt;-<span class="st"> </span><span class="kw">lmeControl</span>(<span class="dt">opt =</span> <span class="st">&quot;optim&quot;</span>,
+                   <span class="dt">maxIter =</span> <span class="dv">500</span>, <span class="dt">msMaxIter =</span> <span class="dv">500</span>,
+                   <span class="dt">tolerance =</span> <span class="fl">1e-6</span>, <span class="dt">niterEM =</span> <span class="dv">25</span>, <span class="dt">msMaxEval =</span> <span class="dv">200</span>, <span class="dt">msTol =</span> <span class="fl">1e-7</span>)
+testContrast &lt;-<span class="st"> </span>function (nlmeObj, contrast) {
+  <span class="kw">require</span>(multcomp)
+  g &lt;-<span class="st"> </span><span class="kw">glht</span>(nlmeObj, <span class="dt">linfct =</span> <span class="kw">c</span>(contrast)) %&gt;%<span class="st"> </span><span class="kw">summary</span>()
+  x &lt;-<span class="st"> </span>g[[<span class="st">&quot;test&quot;</span>]][[<span class="st">&quot;coefficients&quot;</span>]]
+  dir &lt;-<span class="st"> </span><span class="kw">ifelse</span>(x &gt;<span class="st"> </span><span class="dv">0</span>, <span class="st">&quot;higher&quot;</span>, <span class="st">&quot;lower&quot;</span>)
+  s &lt;-<span class="st"> </span>g[[<span class="st">&quot;test&quot;</span>]][[<span class="st">&quot;sigma&quot;</span>]]
+  p &lt;-<span class="st"> </span>g[[<span class="st">&quot;test&quot;</span>]][[<span class="st">&quot;pvalues&quot;</span>]][[<span class="dv">1</span>]]
+  result &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">contrast =</span> contrast,
+                       <span class="dt">coefficient =</span> x,
+                       <span class="dt">sigma =</span> s,
+                       <span class="dt">pvalue =</span> p,
+                       <span class="dt">effsize =</span> <span class="kw">abs</span>(x),
+                       <span class="dt">direction =</span> dir,
+                       <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)
+  <span class="kw">rownames</span>(result) &lt;-<span class="st"> </span><span class="ot">NULL</span>
+  result
+}</code></pre></div>
+<h2 id="all-mice-combined">All mice combined</h2>
+<p>Use <code>nlme::lme()</code>. Specify a general correlation structure with <code>corSymm()</code>. Use this output.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fixed &lt;-<span class="st"> </span><span class="kw">formula</span>(foodIntakeNormalized ~
+<span class="st">                   </span>bedding +
+<span class="st">                   </span>time +
+<span class="st">                   </span>bedding *<span class="st"> </span>time)
+M &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">time =</span> <span class="kw">factor</span>(time)) %&gt;%
+<span class="st">  </span><span class="kw">lme</span>(fixed, <span class="dt">data =</span> ., <span class="dt">random =</span> random, <span class="dt">correlation =</span> cs, <span class="dt">control =</span> ctrl)</code></pre></div>
+<pre><code>## Warning: package 'bindrcpp' was built under R version 3.5.2</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">M %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">tidy</span>() %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(effect ==<span class="st"> &quot;fixed&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">effect</th>
+<th align="left">group</th>
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">(Intercept)</td>
+<td align="right">11.018</td>
+<td align="right">2.123</td>
+<td align="right">429</td>
+<td align="right">5.191</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB</td>
+<td align="right">0.427</td>
+<td align="right">2.074</td>
+<td align="right">429</td>
+<td align="right">0.206</td>
+<td align="right">0.837</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time4</td>
+<td align="right">-0.778</td>
+<td align="right">2.183</td>
+<td align="right">429</td>
+<td align="right">-0.357</td>
+<td align="right">0.722</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time12</td>
+<td align="right">66.280</td>
+<td align="right">3.364</td>
+<td align="right">429</td>
+<td align="right">19.704</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time24</td>
+<td align="right">12.518</td>
+<td align="right">2.690</td>
+<td align="right">429</td>
+<td align="right">4.653</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time36</td>
+<td align="right">118.356</td>
+<td align="right">3.356</td>
+<td align="right">429</td>
+<td align="right">35.265</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time48</td>
+<td align="right">3.367</td>
+<td align="right">2.938</td>
+<td align="right">429</td>
+<td align="right">1.146</td>
+<td align="right">0.252</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time4</td>
+<td align="right">3.590</td>
+<td align="right">3.256</td>
+<td align="right">429</td>
+<td align="right">1.103</td>
+<td align="right">0.271</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time12</td>
+<td align="right">-0.494</td>
+<td align="right">3.649</td>
+<td align="right">429</td>
+<td align="right">-0.135</td>
+<td align="right">0.892</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time24</td>
+<td align="right">-6.888</td>
+<td align="right">2.552</td>
+<td align="right">429</td>
+<td align="right">-2.699</td>
+<td align="right">0.007</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time36</td>
+<td align="right">1.774</td>
+<td align="right">3.874</td>
+<td align="right">429</td>
+<td align="right">0.458</td>
+<td align="right">0.647</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time48</td>
+<td align="right">5.941</td>
+<td align="right">4.294</td>
+<td align="right">429</td>
+<td align="right">1.383</td>
+<td align="right">0.167</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">testBeddingEffect &lt;-<span class="st"> </span>
+<span class="st">  </span><span class="kw">bind_rows</span>(<span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time4 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time12 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time24 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time36 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time48 = 0&quot;</span>))
+testBeddingEffect %&gt;%<span class="st"> </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">contrast</th>
+<th align="right">coefficient</th>
+<th align="right">sigma</th>
+<th align="right">pvalue</th>
+<th align="right">effsize</th>
+<th align="left">direction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">beddingB = 0</td>
+<td align="right">0.427</td>
+<td align="right">2.074</td>
+<td align="right">0.837</td>
+<td align="right">0.427</td>
+<td align="left">higher</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:time4 = 0</td>
+<td align="right">4.017</td>
+<td align="right">2.455</td>
+<td align="right">0.102</td>
+<td align="right">4.017</td>
+<td align="left">higher</td>
+</tr>
+<tr class="odd">
+<td align="left">beddingB + beddingB:time12 = 0</td>
+<td align="right">-0.067</td>
+<td align="right">3.318</td>
+<td align="right">0.984</td>
+<td align="right">0.067</td>
+<td align="left">lower</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:time24 = 0</td>
+<td align="right">-6.461</td>
+<td align="right">2.570</td>
+<td align="right">0.012</td>
+<td align="right">6.461</td>
+<td align="left">lower</td>
+</tr>
+<tr class="odd">
+<td align="left">beddingB + beddingB:time36 = 0</td>
+<td align="right">2.201</td>
+<td align="right">3.426</td>
+<td align="right">0.521</td>
+<td align="right">2.201</td>
+<td align="left">higher</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:time48 = 0</td>
+<td align="right">6.367</td>
+<td align="right">3.046</td>
+<td align="right">0.037</td>
+<td align="right">6.367</td>
+<td align="left">higher</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">test1 &lt;-<span class="st"> </span>testBeddingEffect</code></pre></div>
+<h2 id="by-sex">By sex</h2>
+<p>Use <code>nlme::lme()</code>. Specify a general correlation structure with <code>corSymm()</code>. Use this output.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fixed &lt;-<span class="st"> </span><span class="kw">formula</span>(foodIntakeNormalized ~
+<span class="st">                   </span>bedding +
+<span class="st">                   </span>time +
+<span class="st">                   </span>sex +
+<span class="st">                   </span>bedding *<span class="st"> </span>time +
+<span class="st">                   </span>bedding *<span class="st"> </span>sex +
+<span class="st">                   </span>sex *<span class="st"> </span>time +
+<span class="st">                   </span>bedding *<span class="st"> </span>time *<span class="st"> </span>sex)
+M &lt;-
+<span class="st">  </span>df %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">time =</span> <span class="kw">factor</span>(time)) %&gt;%
+<span class="st">  </span><span class="kw">lme</span>(fixed, <span class="dt">data =</span> ., <span class="dt">random =</span> random, <span class="dt">correlation =</span> cs, <span class="dt">control =</span> ctrl)
+M %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">tidy</span>() %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(effect ==<span class="st"> &quot;fixed&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">effect</th>
+<th align="left">group</th>
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">std.error</th>
+<th align="right">df</th>
+<th align="right">statistic</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">(Intercept)</td>
+<td align="right">13.760</td>
+<td align="right">2.966</td>
+<td align="right">418</td>
+<td align="right">4.640</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB</td>
+<td align="right">-4.249</td>
+<td align="right">2.739</td>
+<td align="right">418</td>
+<td align="right">-1.552</td>
+<td align="right">0.122</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time4</td>
+<td align="right">-1.033</td>
+<td align="right">3.123</td>
+<td align="right">418</td>
+<td align="right">-0.331</td>
+<td align="right">0.741</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time12</td>
+<td align="right">68.281</td>
+<td align="right">4.688</td>
+<td align="right">418</td>
+<td align="right">14.564</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time24</td>
+<td align="right">17.025</td>
+<td align="right">3.692</td>
+<td align="right">418</td>
+<td align="right">4.611</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time36</td>
+<td align="right">123.016</td>
+<td align="right">4.507</td>
+<td align="right">418</td>
+<td align="right">27.296</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time48</td>
+<td align="right">0.022</td>
+<td align="right">3.882</td>
+<td align="right">418</td>
+<td align="right">0.006</td>
+<td align="right">0.996</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">sexM</td>
+<td align="right">-4.488</td>
+<td align="right">4.194</td>
+<td align="right">38</td>
+<td align="right">-1.070</td>
+<td align="right">0.291</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time4</td>
+<td align="right">4.852</td>
+<td align="right">4.618</td>
+<td align="right">418</td>
+<td align="right">1.051</td>
+<td align="right">0.294</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time12</td>
+<td align="right">5.986</td>
+<td align="right">4.989</td>
+<td align="right">418</td>
+<td align="right">1.200</td>
+<td align="right">0.231</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time24</td>
+<td align="right">-8.713</td>
+<td align="right">3.585</td>
+<td align="right">418</td>
+<td align="right">-2.430</td>
+<td align="right">0.016</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time36</td>
+<td align="right">6.814</td>
+<td align="right">5.489</td>
+<td align="right">418</td>
+<td align="right">1.241</td>
+<td align="right">0.215</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time48</td>
+<td align="right">19.092</td>
+<td align="right">5.376</td>
+<td align="right">418</td>
+<td align="right">3.551</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:sexM</td>
+<td align="right">9.708</td>
+<td align="right">3.873</td>
+<td align="right">418</td>
+<td align="right">2.507</td>
+<td align="right">0.013</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time4:sexM</td>
+<td align="right">0.060</td>
+<td align="right">4.417</td>
+<td align="right">418</td>
+<td align="right">0.014</td>
+<td align="right">0.989</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time12:sexM</td>
+<td align="right">-5.604</td>
+<td align="right">6.631</td>
+<td align="right">418</td>
+<td align="right">-0.845</td>
+<td align="right">0.399</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time24:sexM</td>
+<td align="right">-11.136</td>
+<td align="right">5.222</td>
+<td align="right">418</td>
+<td align="right">-2.132</td>
+<td align="right">0.034</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time36:sexM</td>
+<td align="right">-12.754</td>
+<td align="right">6.374</td>
+<td align="right">418</td>
+<td align="right">-2.001</td>
+<td align="right">0.046</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">time48:sexM</td>
+<td align="right">5.882</td>
+<td align="right">5.490</td>
+<td align="right">418</td>
+<td align="right">1.071</td>
+<td align="right">0.285</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time4:sexM</td>
+<td align="right">-2.514</td>
+<td align="right">6.531</td>
+<td align="right">418</td>
+<td align="right">-0.385</td>
+<td align="right">0.701</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time12:sexM</td>
+<td align="right">-13.611</td>
+<td align="right">7.056</td>
+<td align="right">418</td>
+<td align="right">-1.929</td>
+<td align="right">0.054</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time24:sexM</td>
+<td align="right">4.052</td>
+<td align="right">5.070</td>
+<td align="right">418</td>
+<td align="right">0.799</td>
+<td align="right">0.425</td>
+</tr>
+<tr class="odd">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time36:sexM</td>
+<td align="right">-10.179</td>
+<td align="right">7.763</td>
+<td align="right">418</td>
+<td align="right">-1.311</td>
+<td align="right">0.191</td>
+</tr>
+<tr class="even">
+<td align="left">fixed</td>
+<td align="left">fixed</td>
+<td align="left">beddingB:time48:sexM</td>
+<td align="right">-27.071</td>
+<td align="right">7.603</td>
+<td align="right">418</td>
+<td align="right">-3.560</td>
+<td align="right">0.000</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">testBeddingEffect &lt;-<span class="st"> </span>
+<span class="st">  </span><span class="kw">bind_rows</span>(<span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time4 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time12 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time24 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time36 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:time48 = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:sexM = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:sexM + beddingB:time4:sexM = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:sexM + beddingB:time12:sexM = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:sexM + beddingB:time24:sexM = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:sexM + beddingB:time36:sexM = 0&quot;</span>),
+            <span class="kw">testContrast</span>(M, <span class="st">&quot;beddingB + beddingB:sexM + beddingB:time48:sexM = 0&quot;</span>))
+testBeddingEffect %&gt;%<span class="st"> </span><span class="kw">kable</span>(<span class="dt">digits =</span> <span class="dv">3</span>)</code></pre></div>
+<table style="width:100%;">
+<colgroup>
+<col width="52%"></col>
+<col width="12%"></col>
+<col width="6%"></col>
+<col width="7%"></col>
+<col width="8%"></col>
+<col width="10%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">contrast</th>
+<th align="right">coefficient</th>
+<th align="right">sigma</th>
+<th align="right">pvalue</th>
+<th align="right">effsize</th>
+<th align="left">direction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">beddingB = 0</td>
+<td align="right">-4.249</td>
+<td align="right">2.739</td>
+<td align="right">0.121</td>
+<td align="right">4.249</td>
+<td align="left">lower</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:time4 = 0</td>
+<td align="right">0.603</td>
+<td align="right">3.425</td>
+<td align="right">0.860</td>
+<td align="right">0.603</td>
+<td align="left">higher</td>
+</tr>
+<tr class="odd">
+<td align="left">beddingB + beddingB:time12 = 0</td>
+<td align="right">1.737</td>
+<td align="right">4.712</td>
+<td align="right">0.712</td>
+<td align="right">1.737</td>
+<td align="left">higher</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:time24 = 0</td>
+<td align="right">-12.962</td>
+<td align="right">3.365</td>
+<td align="right">0.000</td>
+<td align="right">12.962</td>
+<td align="left">lower</td>
+</tr>
+<tr class="odd">
+<td align="left">beddingB + beddingB:time36 = 0</td>
+<td align="right">2.565</td>
+<td align="right">4.985</td>
+<td align="right">0.607</td>
+<td align="right">2.565</td>
+<td align="left">higher</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:time48 = 0</td>
+<td align="right">14.843</td>
+<td align="right">3.993</td>
+<td align="right">0.000</td>
+<td align="right">14.843</td>
+<td align="left">higher</td>
+</tr>
+<tr class="odd">
+<td align="left">beddingB + beddingB:sexM = 0</td>
+<td align="right">5.459</td>
+<td align="right">2.739</td>
+<td align="right">0.046</td>
+<td align="right">5.459</td>
+<td align="left">higher</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:sexM + beddingB:time4:sexM = 0</td>
+<td align="right">2.946</td>
+<td align="right">5.749</td>
+<td align="right">0.608</td>
+<td align="right">2.946</td>
+<td align="left">higher</td>
+</tr>
+<tr class="odd">
+<td align="left">beddingB + beddingB:sexM + beddingB:time12:sexM = 0</td>
+<td align="right">-8.152</td>
+<td align="right">6.862</td>
+<td align="right">0.235</td>
+<td align="right">8.152</td>
+<td align="left">lower</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:sexM + beddingB:time24:sexM = 0</td>
+<td align="right">9.511</td>
+<td align="right">4.917</td>
+<td align="right">0.053</td>
+<td align="right">9.511</td>
+<td align="left">higher</td>
+</tr>
+<tr class="odd">
+<td align="left">beddingB + beddingB:sexM + beddingB:time36:sexM = 0</td>
+<td align="right">-4.719</td>
+<td align="right">7.415</td>
+<td align="right">0.525</td>
+<td align="right">4.719</td>
+<td align="left">lower</td>
+</tr>
+<tr class="even">
+<td align="left">beddingB + beddingB:sexM + beddingB:time48:sexM = 0</td>
+<td align="right">-21.612</td>
+<td align="right">6.697</td>
+<td align="right">0.001</td>
+<td align="right">21.612</td>
+<td align="left">lower</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">test2 &lt;-<span class="st"> </span>testBeddingEffect</code></pre></div>
+<h1 id="interpretation">Interpretation</h1>
+<p>Using a model that does not distinguish male and female mice, there is a slight difference in food intake by bedding type at 24 and 48 hours. At 24 hours, food intake is 6.46 mg/g lower with bedding type B compared to A (p-value: 0.012). At 48 hours, food intake is 6.37 mg/g higher with bedding type B compared to A (p-value: 0.037).</p>
+<p>Among female mice, there is a difference in food intake by bedding type at 24 and 48 hours. At 24 hours, food intake is 13 mg/g lower with bedding type B compared to A (p-value: 0.00012). At 48 hours, food intake is 14.8 mg/g higher with bedding type B compared to A (p-value: 0.0002).</p>
+<p>Among male mice, there is a difference in food intake by bedding type at 2 and 48 hours. At 2 hours, food intake is 5.46 mg/g higher with bedding type B compared to A (p-value: 0.046). At 48 hours, food intake is 21.6 mg/g lower with bedding type B compared to A (p-value: 0.0013).</p>
+<h1 id="r-session-information">R session information</h1>
+<p>For debugging purposes.</p>
+<pre><code>## [1] &quot;Run time: 2019-05-23 20:56:39&quot;</code></pre>
+<pre><code>## R version 3.5.1 (2018-07-02)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 17134)
+## 
+## Matrix products: default
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] bindrcpp_0.2.2    gdtools_0.1.7     multcomp_1.4-8   
+##  [4] TH.data_1.0-9     MASS_7.3-50       survival_2.43-3  
+##  [7] mvtnorm_1.0-8     broom.mixed_0.2.3 nlme_3.1-137     
+## [10] lme4_1.1-19       Matrix_1.2-14     svglite_1.2.1    
+## [13] broom_0.5.1       readxl_1.2.0      forcats_0.3.0    
+## [16] stringr_1.3.1     dplyr_0.7.8       purrr_0.2.5      
+## [19] readr_1.3.1       tidyr_0.8.2       tibble_1.4.2     
+## [22] ggplot2_3.1.0     tidyverse_1.2.1   magrittr_1.5     
+## [25] checkpoint_0.4.5  rmarkdown_1.11    knitr_1.21       
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_0.12.19       lubridate_1.7.4    lattice_0.20-35   
+##  [4] zoo_1.8-4          assertthat_0.2.0   digest_0.6.18     
+##  [7] R6_2.3.0           cellranger_1.1.0   plyr_1.8.4        
+## [10] backports_1.1.3    evaluate_0.12      coda_0.19-2       
+## [13] highr_0.7          httr_1.4.0         pillar_1.3.1      
+## [16] rlang_0.3.0.1      lazyeval_0.2.1     rstudioapi_0.8    
+## [19] minqa_1.2.4        nloptr_1.2.1       labeling_0.3      
+## [22] splines_3.5.1      TMB_1.7.15         munsell_0.5.0     
+## [25] compiler_3.5.1     modelr_0.1.2       xfun_0.4          
+## [28] pkgconfig_2.0.2    htmltools_0.3.6    tidyselect_0.2.5  
+## [31] glmmTMB_0.2.2.0    codetools_0.2-15   crayon_1.3.4      
+## [34] withr_2.1.2        grid_3.5.1         jsonlite_1.6      
+## [37] gtable_0.2.0       scales_1.0.0       cli_1.0.1         
+## [40] stringi_1.2.4      reshape2_1.4.3     xml2_1.2.0        
+## [43] generics_0.0.2     sandwich_2.5-0     RColorBrewer_1.1-2
+## [46] tools_3.5.1        glue_1.3.0         hms_0.4.2         
+## [49] colorspace_1.3-2   rvest_0.3.2        bindr_0.1.1       
+## [52] haven_2.0.0</code></pre>
+</body>
+</html>
