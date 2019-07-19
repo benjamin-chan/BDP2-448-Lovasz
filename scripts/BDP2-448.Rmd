@@ -49,6 +49,18 @@ names(df) <- newnames
 data.frame(oldnames, newnames) %>% kable()
 ```
 
+Remove outlier
+
+```{r}
+df %>%
+  select(id, sex, time, bedding, foodIntakeNormalized) %>%
+  filter(id == 42 & bedding == "B") %>%
+  kable()
+df <-
+  df %>%
+  filter(!(id == 42 & bedding == "B"))
+```
+
 Plot data.
 
 ```{r}
