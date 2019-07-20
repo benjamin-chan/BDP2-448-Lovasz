@@ -53,7 +53,7 @@ Remove outlier
 
 ```{r}
 df %>%
-  select(id, sex, time, bedding, foodIntakeNormalized) %>%
+  dplyr::select(id, sex, time, bedding, foodIntakeNormalized) %>%
   filter(id == 42 & bedding == "B") %>%
   kable()
 df <-
