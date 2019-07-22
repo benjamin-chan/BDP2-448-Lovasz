@@ -54,11 +54,11 @@ Remove outlier
 ```{r}
 df %>%
   dplyr::select(id, sex, time, bedding, foodIntakeNormalized) %>%
-  filter(id == 42 & bedding == "B") %>%
+  filter(id == 42 & bedding == "B" & time %in% c(4, 12)) %>%
   kable()
 df <-
   df %>%
-  filter(!(id == 42 & bedding == "B"))
+  filter(!(id == 42 & bedding == "B" & time %in% c(4, 12)))
 ```
 
 Plot data.
