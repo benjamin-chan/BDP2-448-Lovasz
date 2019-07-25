@@ -58,7 +58,9 @@ df %>%
   kable()
 df <-
   df %>%
-  filter(!(id == 42 & bedding == "B" & time %in% c(4, 12)))
+  filter(!(id == 42 & bedding == "B" & time %in% c(4, 12))) %>%
+  mutate(hadOutlierRemoved = case_when(id == 42 & bedding == "B" ~ TRUE,
+                                       TRUE ~ FALSE))
 ```
 
 Plot data.
@@ -68,7 +70,7 @@ G <-
   df %>%
   ggplot() +
   aes(x = time, y = foodIntakeNormalized, color = bedding) +
-  geom_line(aes(group = id), alpha = 1/4) +
+  geom_line(aes(group = id, linetype = hadOutlierRemoved), alpha = 1/4) +
   geom_boxplot(aes(group = time)) +
   facet_grid(sex ~ bedding) +
   scale_color_brewer(palette = "Set1") +
