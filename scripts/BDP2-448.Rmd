@@ -211,17 +211,17 @@ test2 <- testBeddingEffect
 # Interpretation
 
 Using a model that does not distinguish male and female mice, there is a
-slight difference in food intake by bedding type at 24 and 48 hours.
+difference in food intake by bedding type at 4 and 24 hours.
+At 4 hours, food intake is
+`r test1 %>% filter(contrast == "beddingB + beddingB:time4 = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
+`r test1 %>% filter(contrast == "beddingB + beddingB:time4 = 0") %>% pull(direction)`
+with bedding type B compared to A
+(p-value: `r test1 %>% filter(contrast == "beddingB + beddingB:time4 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
 At 24 hours, food intake is
 `r test1 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
 `r test1 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(direction)`
 with bedding type B compared to A
 (p-value: `r test1 %>% filter(contrast == "beddingB + beddingB:time24 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
-At 48 hours, food intake is
-`r test1 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
-`r test1 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(direction)`
-with bedding type B compared to A
-(p-value: `r test1 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
 
 Among female mice, there is a difference in food intake by bedding type at 24
 and 48 hours.
@@ -236,12 +236,7 @@ At 48 hours, food intake is
 with bedding type B compared to A
 (p-value: `r test2 %>% filter(contrast == "beddingB + beddingB:time48 = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
 
-Among male mice, there is a difference in food intake by bedding type at 2 and 48 hours.
-At 2 hours, food intake is
-`r test2 %>% filter(contrast == "beddingB + beddingB:sexM = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
-`r test2 %>% filter(contrast == "beddingB + beddingB:sexM = 0") %>% pull(direction)`
-with bedding type B compared to A
-(p-value: `r test2 %>% filter(contrast == "beddingB + beddingB:sexM = 0") %>% pull(pvalue) %>% sprintf("%.2g", .)`).
+Among male mice, there is a difference in food intake by bedding type at 48 hours.
 At 48 hours, food intake is
 `r test2 %>% filter(contrast == "beddingB + beddingB:sexM + beddingB:time48:sexM = 0") %>% pull(effsize) %>% sprintf("%.3g", .)` mg/g
 `r test2 %>% filter(contrast == "beddingB + beddingB:sexM + beddingB:time48:sexM = 0") %>% pull(direction)`
