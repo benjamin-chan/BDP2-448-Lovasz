@@ -69,8 +69,8 @@ Plot data.
 G <-
   df %>%
   mutate(sex = factor(sex,
-                      levels = c("M", "F"),
-                      labels = c("Males", "Females")),
+                      levels = c("F", "M"),
+                      labels = c("Females", "Males")),
          bedding = factor(bedding,
                           levels = c("A", "B"),
                           labels = c("Control bedding", "Sick bedding"))) %>%
