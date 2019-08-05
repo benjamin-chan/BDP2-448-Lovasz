@@ -68,6 +68,12 @@ Plot data.
 ```{r}
 G <-
   df %>%
+  mutate(sex = factor(sex,
+                      levels = c("M", "F"),
+                      labels = c("Males", "Females")),
+         bedding = factor(bedding,
+                          levels = c("A", "B"),
+                          labels = c("Control bedding", "Sick bedding"))) %>%
   ggplot() +
   aes(x = time, y = foodIntakeNormalized, color = bedding) +
   geom_line(aes(group = id, linetype = hadOutlierRemoved), alpha = 1/4) +
